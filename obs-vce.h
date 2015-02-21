@@ -22,11 +22,11 @@
 #include <util/platform.h>
 #include <obs-module.h>
 
-#include <amf/core/Buffer.h>
-#include <amf/core/Surface.h>
-#include <amf/core/Context.h>
-#include <amf/components/Component.h>
-#include <amf/components/VideoEncoderVCE.h>
+#include <core/Buffer.h>
+#include <core/Surface.h>
+#include <core/Context.h>
+#include <components/Component.h>
+#include <components/VideoEncoderVCE.h>
 
 #include <string>
 #include <atlbase.h>

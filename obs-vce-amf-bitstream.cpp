@@ -19,17 +19,26 @@
 void parse_packet(struct obs_amd *obs_vce,
 		struct encoder_packet *packet, amf::AMFDataPtr pic_out)
 {
-	debug("parse_packet");
-	UNUSED_PARAMETER(packet);
+	info("parse_packet");
+	//UNUSED_PARAMETER(packet);
+
+	amf::AMFBufferPtr pBuffer(pic_out);
+	pBuffer->Convert(amf::AMF_MEMORY_HOST);
+
 	//da_resize(obs_vce->packet_data, 0);
 	//for (int i = 0; i < nal_count; i++) {
 	//	da_push_back_array(obs_vce->packet_data, nal->p_payload,
 	//			nal->i_payload);
 	//}
-	//packet->data = obs_vce->packet_data.array;
-	//packet->size = obs_vce->packet_data.num;
-	//packet->type = OBS_ENCODER_VIDEO;
-	//packet->pts = (int64_t)pic_out->GetPts();
-	//packet->dts = pic_out->
-	//packet->keyframe = pic_out->
+
+	packet->type = OBS_ENCODER_VIDEO;
+	debug("get data");
+	packet->data = (uint8_t*)pBuffer->GetNative();
+	debug("get size");
+	packet->size = pBuffer->GetSize();
+	debug("get pts");
+	packet->pts = (int64_t)pBuffer->GetPts();
+	debug("get duration");
+	packet->dts = pBuffer->GetDuration();
+	//packet->keyframe = pBuffer->
 }

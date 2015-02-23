@@ -178,30 +178,27 @@ bool obs_vce_amf_encode(void *data, struct encoder_frame *frame,
 	 */
 	debug("SubmitInput to VCE");
 	amfReturn = obs_vce->vce_encoder->SubmitInput(obs_vce->vce_input);
-	if (amfReturn == AMF_INPUT_FULL) {
-		warn("VCE Encoder Input Full");
-	}
-	else if (amfReturn == AMF_ENCODER_NOT_PRESENT) {
-		warn("VCE Hardware Not Present");
-	}
-	else {
-		obs_amf_result(obs_vce, amfReturn);
-	}
+	obs_amf_result(obs_vce, amfReturn);
 
 	/* Queries for results (likely in a separate thread) by
 	 *     AMFComponent::QueryOutput
 	 */
-	debug("QueryOutput from VCE");
+	info("QueryOutput from VCE");
 	amfReturn = obs_vce->vce_encoder->QueryOutput(&outData);
 	if (amfReturn == AMF_OK) {
 		parse_packet(obs_vce, packet, outData);
-		return true;
+		//obs_vce->vce_encoder->Drain();
+		//return true;
+	}
+	else {
+		obs_amf_result(obs_vce, amfReturn);
+		//return true;
 	}
 
-	// debug("Telling VCE to Drain");
-	// amfReturn = obs_vce->vce_encoder->Drain();
-	// if (amfReturn == AMF_OK)
-	// 	return true;
+	 info("Telling VCE to Drain");
+	 amfReturn = obs_vce->vce_encoder->Drain();
+	 if (amfReturn == AMF_OK)
+	 	return true;
 
 	return false;
 }
@@ -303,7 +300,7 @@ void obs_amf_result(struct obs_amd *obs_vce, AMF_RESULT amf_res)
 	case AMF_FILE_NOT_OPEN: // cannot open file
 		string = "File Not Open";
 		break;
-	// device common codes
+		// device common codes
 	case AMF_NO_DEVICE:
 		string = "No Device";
 		break;
@@ -359,5 +356,11 @@ void obs_amf_result(struct obs_amd *obs_vce, AMF_RESULT amf_res)
 		string = "Unknown";
 		break;
 	}
-	debug("AMF_RESULT: %s", string);
+
+	if (amf_res == AMF_OK) {
+		debug("AMF_RESULT: %s", string);
+	}
+	else {
+		warn("AMF_RESULT: %s", string);
+	}
 }

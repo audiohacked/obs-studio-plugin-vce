@@ -20,6 +20,7 @@
 #include <util/dstr.h>
 #include <util/darray.h>
 #include <util/platform.h>
+#include <util/threading.h>
 #include <obs-module.h>
 
 #include <core/Buffer.h>
@@ -60,7 +61,7 @@ AMF_RESULT obs_vce_amf_d3d11_terminate(struct obs_amd *obs_vce);
 
 AMF_RESULT obs_vce_amf_d3d11_init(struct obs_amd *obs_vce, struct obs_vce_amf *ova, amf_uint32 adapterID);
 
-void parse_packet(struct obs_amd *obs_vce, struct encoder_packet *packet, amf::AMFDataPtr pic_out);
+void parse_packet(struct obs_amd *obs_vce, struct encoder_packet *packet, amf::AMFBufferPtr pic_out);
 void init_pic_data(struct obs_amd *obs_vce, struct encoder_frame *frame);
 
 	/* ------------------------------------------------------------------------- */
@@ -73,24 +74,26 @@ struct obs_amd {
 	obs_encoder_t           *encoder;
 
 	// amf::AMFPropertyStorage vce_param;
-	amf::AMFContextPtr         context;
-	amf::AMFComponentPtr       vce_encoder;
-	amf::AMFSurfacePtr         vce_input;
-	amf::AMFBufferPtr          vce_output;
+	amf::AMFContextPtr             context;
+	amf::AMFComponentPtr           vce_encoder;
+	amf::AMFSurfacePtr             vce_input;
+	amf::AMFBufferPtr              vce_output;
 
-	amf::AMF_SURFACE_FORMAT    vce_format;
+	amf::AMF_SURFACE_FORMAT        vce_format;
 
-	DARRAY(uint8_t)            packet_data;
+	DARRAY(uint8_t)                packet_data;
 
-	uint8_t                    *extra_data;
-	uint8_t                    *sei;
+	uint8_t                        *extra_data;
+	uint8_t                        *sei;
 
-	size_t                     extra_data_size;
-	size_t                     sei_size;
+	size_t                         extra_data_size;
+	size_t                         sei_size;
 
-	os_performance_token_t     *performance_token;
+	os_performance_token_t         *performance_token;
 
-	ATL::CComPtr<ID3D11Device> dx11_device;
+	ATL::CComPtr<ID3D11Device>     dx11_device;
+	const struct video_output_info *vid_out_info;
+	os_event_t                     *mStopEvent;
 };
 
 struct obs_vce_amf {

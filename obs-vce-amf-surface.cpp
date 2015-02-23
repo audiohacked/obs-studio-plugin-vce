@@ -27,19 +27,19 @@ void init_pic_data(struct obs_amd *obs_vce, struct encoder_frame *frame)
 
 	debug("SetPts");
 	obs_vce->vce_input->SetPts(frame->pts);
-	obs_vce->vce_input->SetFrameType(amf::AMF_FRAME_PROGRESSIVE);
+	//obs_vce->vce_input->SetFrameType(amf::AMF_FRAME_PROGRESSIVE);
 	//obs_vce->vce_input->SetDuration();
 
 	if (obs_vce->vce_input->GetFormat() == amf::AMF_SURFACE_NV12) {
 		debug("video format NV12");
 		debug("NV12 Plane Count: %d", obs_vce->vce_input->GetPlanesCount());
 
+		size_t h_size = obs_vce->vid_out_info->height;
+
 		debug("copy frame plane Y to VCE");
-		//memcpy(obs_vce->vce_input->GetPlane(amf::AMF_PLANE_Y), frame->data[0], frame->linesize[0]);
-		memcpy(amf_plane[0]->GetNative(), frame->data[0], frame->linesize[0]);
+		memcpy(amf_plane[0]->GetNative(), frame->data[0], frame->linesize[0]*h_size);
 
 		debug("copy frame plane UV to VCE");
-		//memcpy(obs_vce->vce_input->GetPlane(amf::AMF_PLANE_UV), frame->data[1], frame->linesize[1]);
-		memcpy(amf_plane[1]->GetNative(), frame->data[1], frame->linesize[1]);
+		memcpy(amf_plane[1]->GetNative() , frame->data[1], frame->linesize[1]*h_size/2);
 	}
 }

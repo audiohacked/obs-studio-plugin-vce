@@ -34,8 +34,7 @@ void *obs_vce_amf_create(obs_data_t *settings, obs_encoder_t *encoder)
 	AMF_RESULT amfReturn = AMF_OK;
 	struct obs_vce_amf *ova = reinterpret_cast<struct obs_vce_amf*>(bzalloc(sizeof(struct obs_vce_amf)));
 
-	const struct video_output_info *voi;
-	voi = video_output_get_info(obs_get_video());
+	obs_vce->vid_out_info = video_output_get_info(obs_get_video());
 
 	//struct obs_video_info *ovi;
 	//bool got_video = obs_get_video_info(ovi);
@@ -48,7 +47,7 @@ void *obs_vce_amf_create(obs_data_t *settings, obs_encoder_t *encoder)
 	 */
 	amfReturn = AMFCreateContext(&obs_vce->context);
 	if (amfReturn != AMF_OK) {
-		debug("Could not create AMF Context!");
+		warn("Could not create AMF Context!");
 	}
 
 	if (gs_get_device_type() == GS_DEVICE_DIRECT3D_11) {
@@ -107,7 +106,7 @@ void *obs_vce_amf_create(obs_data_t *settings, obs_encoder_t *encoder)
 	// AMFInterface* - > AMFBuffer*; SPS/PPS buffer - read-only
 	// obs_vce->vce_encoder->SetProperty(amf::AMF_VIDEO_ENCODER_EXTRADATA, );
 	
-	if (voi->format == VIDEO_FORMAT_NV12) {
+	if (obs_vce->vid_out_info->format == VIDEO_FORMAT_NV12) {
 		obs_vce->vce_format = amf::AMF_SURFACE_NV12;
 	}
 
@@ -126,7 +125,10 @@ bool obs_vce_amf_encode(void *data, struct encoder_frame *frame,
 {
 	struct obs_amd *obs_vce = reinterpret_cast<struct obs_amd*>(data);
 	amf::AMFDataPtr outData;
+	amf::AMFBufferPtr pBuffer;
 	AMF_RESULT amfReturn = AMF_OK;
+
+	debug("AMF Encode");
 
 	if (!frame || !packet || !received_packet) {
 		warn("Data missing");
@@ -141,6 +143,7 @@ bool obs_vce_amf_encode(void *data, struct encoder_frame *frame,
 	 *     Copy input data object using native data-access functionality
 	 *         AMFSurface::GetPlane(), AMFPlane::GetNative()
 	 */
+	debug("Allocating Surface");
 	if (gs_get_device_type() == GS_DEVICE_DIRECT3D_11) {
 		debug("Using DX11 Device for AMF Surface");
 		//obs_vce->context->CreateSurfaceFromDX11Native();
@@ -150,7 +153,6 @@ bool obs_vce_amf_encode(void *data, struct encoder_frame *frame,
 		//obs_vce->context->CreateSurfaceFromOpenGLNative();
 	}
 	else {
-		debug("Allocating Host Surface");
 		debug("AllocSurface");
 		amfReturn = obs_vce->context->AllocSurface(amf::AMF_MEMORY_HOST,
 				obs_vce->vce_format, ENC_WIDTH, ENC_HEIGHT,
@@ -179,26 +181,26 @@ bool obs_vce_amf_encode(void *data, struct encoder_frame *frame,
 	debug("SubmitInput to VCE");
 	amfReturn = obs_vce->vce_encoder->SubmitInput(obs_vce->vce_input);
 	obs_amf_result(obs_vce, amfReturn);
+	while (amfReturn == AMF_INPUT_FULL) {
+		os_sleep_ms(1);
+		amfReturn = obs_vce->vce_encoder->SubmitInput(obs_vce->vce_input);
+	}
 
 	/* Queries for results (likely in a separate thread) by
 	 *     AMFComponent::QueryOutput
 	 */
-	info("QueryOutput from VCE");
+	debug("QueryOutput from VCE");
 	amfReturn = obs_vce->vce_encoder->QueryOutput(&outData);
+	obs_amf_result(obs_vce, amfReturn);
+	while (amfReturn == AMF_REPEAT) {
+		amfReturn = obs_vce->vce_encoder->QueryOutput(&outData);
+	}
 	if (amfReturn == AMF_OK) {
-		parse_packet(obs_vce, packet, outData);
-		//obs_vce->vce_encoder->Drain();
-		//return true;
+		pBuffer = amf::AMFBufferPtr(outData);
+		pBuffer->Convert(amf::AMF_MEMORY_HOST);
+		parse_packet(obs_vce, packet, pBuffer);
+		return true;
 	}
-	else {
-		obs_amf_result(obs_vce, amfReturn);
-		//return true;
-	}
-
-	 info("Telling VCE to Drain");
-	 amfReturn = obs_vce->vce_encoder->Drain();
-	 if (amfReturn == AMF_OK)
-	 	return true;
 
 	return false;
 }
@@ -211,18 +213,16 @@ void obs_vce_amf_destroy(void *data)
 	AMF_RESULT amfReturn = AMF_OK;
 
 	if (obs_vce) {
-		os_end_high_performance(obs_vce->performance_token);
-
 		/* At the end of the file execute 'drain' to force the component to 
 		 * return all accumulated frames: AMFComponent::Drain()
 		 */
-		obs_vce->vce_encoder->Drain();
+		amfReturn = obs_vce->vce_encoder->Drain();
+		obs_amf_result(obs_vce, amfReturn);
 
 		/* Checks for EOF error returning from QueryResult() to detect end of drain
 		 */
 		amfReturn = obs_vce->vce_encoder->QueryOutput(reinterpret_cast<amf::AMFData**>(&obs_vce->vce_output));
-		if (amfReturn == AMF_EOF)
-			warn("EOF to detect end of drain");
+		obs_amf_result(obs_vce, amfReturn);
 
 		obs_vce->vce_input->Release();
 		//obs_vce->vce_output->Release();
@@ -234,8 +234,10 @@ void obs_vce_amf_destroy(void *data)
 		obs_vce->vce_encoder->Terminate();
 		obs_vce->context->Terminate();
 
+
 		/* Clean up OBS data
 		*/
+		os_end_high_performance(obs_vce->performance_token);
 		bfree(obs_vce->sei);
 		bfree(obs_vce->extra_data);
 		obs_vce->sei = NULL;
@@ -361,6 +363,6 @@ void obs_amf_result(struct obs_amd *obs_vce, AMF_RESULT amf_res)
 		debug("AMF_RESULT: %s", string);
 	}
 	else {
-		warn("AMF_RESULT: %s", string);
+		debug("AMF_RESULT: %s", string);
 	}
 }

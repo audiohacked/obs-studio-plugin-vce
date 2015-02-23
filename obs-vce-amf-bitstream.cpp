@@ -17,13 +17,12 @@
 #include "obs-vce.h"
 
 void parse_packet(struct obs_amd *obs_vce,
-		struct encoder_packet *packet, amf::AMFDataPtr pic_out)
+		struct encoder_packet *packet, amf::AMFBufferPtr pic_out)
 {
-	info("parse_packet");
+	debug("parse_packet");
 	//UNUSED_PARAMETER(packet);
 
-	amf::AMFBufferPtr pBuffer(pic_out);
-	pBuffer->Convert(amf::AMF_MEMORY_HOST);
+	int frameType = -1;
 
 	//da_resize(obs_vce->packet_data, 0);
 	//for (int i = 0; i < nal_count; i++) {
@@ -32,13 +31,20 @@ void parse_packet(struct obs_amd *obs_vce,
 	//}
 
 	packet->type = OBS_ENCODER_VIDEO;
+
 	debug("get data");
-	packet->data = (uint8_t*)pBuffer->GetNative();
+	packet->data = (uint8_t*)pic_out->GetNative();
+
 	debug("get size");
-	packet->size = pBuffer->GetSize();
+	packet->size = pic_out->GetSize();
+
 	debug("get pts");
-	packet->pts = (int64_t)pBuffer->GetPts();
+	packet->pts = (int64_t)pic_out->GetPts();
+
 	debug("get duration");
-	packet->dts = pBuffer->GetDuration();
-	//packet->keyframe = pBuffer->
+	packet->dts = pic_out->GetDuration();
+
+	debug("get keyframe");
+	pic_out->GetProperty(AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE, &frameType);
+	packet->keyframe = (frameType == 0);
 }

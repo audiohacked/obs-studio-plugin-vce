@@ -17,9 +17,9 @@
 #include "obs-vce.h"
 
 void parse_packet(struct obs_amd *obs_vce,
-		struct encoder_packet *packet, amf::AMFBufferPtr pic_out)
+		struct encoder_packet *packet, amf::AMFDataPtr pic_out)
 {
-	info("parse_packet");
+	debug("parse_packet");
 	UNUSED_PARAMETER(packet);
 	//da_resize(obs_vce->packet_data, 0);
 	//for (int i = 0; i < nal_count; i++) {

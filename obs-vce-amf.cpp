@@ -115,6 +115,9 @@ void *obs_vce_amf_create(obs_data_t *settings, obs_encoder_t *encoder)
 	if (amfReturn != AMF_OK)
 		warn("Unable to Init Encoder");
 	
+	obs_vce->performance_token =
+		os_request_high_performance("vce_amf encoding");
+
 	return obs_vce;
 }
 
@@ -154,7 +157,7 @@ bool obs_vce_amf_encode(void *data, struct encoder_frame *frame,
 				&obs_vce->vce_input);
 		obs_amf_result(obs_vce, amfReturn);
 	}
-	//init_pic_data(obs_vce, frame);
+	init_pic_data(obs_vce, frame);
 
 	// obs_vce->vce_input->SetProperty(AMF_VIDEO_ENCODER_END_OF_SEQUENCE, false);
 	// obs_vce->vce_input->SetProperty(AMF_VIDEO_ENCODER_END_OF_STREAM, false);
@@ -191,8 +194,8 @@ bool obs_vce_amf_encode(void *data, struct encoder_frame *frame,
 	debug("QueryOutput from VCE");
 	amfReturn = obs_vce->vce_encoder->QueryOutput(&outData);
 	if (amfReturn == AMF_OK) {
-		parse_packet(obs_vce, packet, obs_vce->vce_output);
-		//return true;
+		parse_packet(obs_vce, packet, outData);
+		return true;
 	}
 
 	// debug("Telling VCE to Drain");

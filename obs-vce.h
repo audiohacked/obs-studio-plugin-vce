@@ -60,7 +60,7 @@ AMF_RESULT obs_vce_amf_d3d11_terminate(struct obs_amd *obs_vce);
 
 AMF_RESULT obs_vce_amf_d3d11_init(struct obs_amd *obs_vce, struct obs_vce_amf *ova, amf_uint32 adapterID);
 
-void parse_packet(struct obs_amd *obs_vce, struct encoder_packet *packet, amf::AMFBufferPtr pic_out);
+void parse_packet(struct obs_amd *obs_vce, struct encoder_packet *packet, amf::AMFDataPtr pic_out);
 void init_pic_data(struct obs_amd *obs_vce, struct encoder_frame *frame);
 
 	/* ------------------------------------------------------------------------- */

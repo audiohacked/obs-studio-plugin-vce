@@ -33,37 +33,3 @@ void parse_packet(struct obs_amd *obs_vce,
 	//packet->dts = pic_out->
 	//packet->keyframe = pic_out->
 }
-
-void init_pic_data(struct obs_amd *obs_vce, struct encoder_frame *frame)
-{
-	info("init_pic_data");
-	//amf::AMFPlanePtr amf_plane[3];
-	const struct video_output_info *voi;
-	voi = video_output_get_info(obs_get_video());
-
-	info("SetPts");
-	obs_vce->vce_input->SetPts(frame->pts);
-	obs_vce->vce_input->SetFrameType(amf::AMF_FRAME_PROGRESSIVE);
-	//obs_vce->vce_input->SetDuration();
-
-	switch (voi->format) {
-	case VIDEO_FORMAT_I420:
-		memcpy(obs_vce->vce_input->GetPlane(amf::AMF_PLANE_V), frame->data[2], sizeof(frame->data[2]));
-		info("copy frame plane V to VCE");
-		memcpy(obs_vce->vce_input->GetPlane(amf::AMF_PLANE_U), frame->data[1], sizeof(frame->data[1]));
-		info("copy frame plane U to VCE");
-		memcpy(obs_vce->vce_input->GetPlane(amf::AMF_PLANE_Y), frame->data[0], sizeof(frame->data[0]));
-		info("copy frame plane Y to VCE");
-		break;
-	case VIDEO_FORMAT_NV12:
-		info("video format NV12");
-		info("NV12 Plane Count: %d", obs_vce->vce_input->GetPlanesCount());
-		memcpy(obs_vce->vce_input->GetPlane(amf::AMF_PLANE_UV), frame->data[1], sizeof(frame->data[1]));
-		info("copy frame plane UV to VCE");
-		memcpy(obs_vce->vce_input->GetPlane(amf::AMF_PLANE_Y), frame->data[0], sizeof(frame->data[0]));
-		info("copy frame plane Y to VCE");
-		break;
-	default:
-		warn("Unknown Video Format");
-	}
-}

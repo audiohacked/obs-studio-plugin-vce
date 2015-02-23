@@ -54,23 +54,23 @@ void obs_vce_amf_d3d11_enumerate(struct obs_amd *obs_vce, struct obs_vce_amf *ov
     HRESULT hr = CreateDXGIFactory(__uuidof(IDXGIFactory), (void **)&pFactory);
     if(FAILED(hr))
     {
-        warn("CreateDXGIFactory failed. Error: %x", hr);
+        debug("CreateDXGIFactory failed. Error: %x", hr);
         return;
     }
 
-    info("DX11: List of adapters:");
+    debug("DX11: List of adapters:");
     UINT count = 0;
     ova->m_adaptersCount = 0;
     while(true)
     {
-		warn("DX11: EnumAdaptor");
+		debug("DX11: EnumAdaptor");
         ATL::CComPtr<IDXGIAdapter> pAdapter;
         if(pFactory->EnumAdapters(count, &pAdapter) == DXGI_ERROR_NOT_FOUND)
         {
             break;
         }
 
-		warn("DX11: GetDesc");
+		debug("DX11: GetDesc");
         DXGI_ADAPTER_DESC desc;
         pAdapter->GetDesc(&desc);
 
@@ -79,7 +79,7 @@ void obs_vce_amf_d3d11_enumerate(struct obs_amd *obs_vce, struct obs_vce_amf *ov
             count++;
             continue;
         }
-		warn("DX11: EnumOutputs");
+		debug("DX11: EnumOutputs");
         ATL::CComPtr<IDXGIOutput> pOutput;
         if(pAdapter->EnumOutputs(0, &pOutput) == DXGI_ERROR_NOT_FOUND)
         {
@@ -89,7 +89,7 @@ void obs_vce_amf_d3d11_enumerate(struct obs_amd *obs_vce, struct obs_vce_amf *ov
         char strDevice[100];
         _snprintf_s(strDevice, 100, "%X", desc.DeviceId);
 
-		info("\t%d: Device ID: %s [%s]", ova->m_adaptersCount, strDevice, desc.Description);
+		debug("\t%d: Device ID: %s [%s]", ova->m_adaptersCount, strDevice, desc.Description);
         ova->m_adaptersIndexes[ova->m_adaptersCount] = count;
         ova->m_adaptersCount++;
         count++;
@@ -112,13 +112,13 @@ AMF_RESULT obs_vce_amf_d3d11_init(struct obs_amd *obs_vce, struct obs_vce_amf *o
 	hr = CreateDXGIFactory(__uuidof(IDXGIFactory), (void **)&pFactory);
 	if (FAILED(hr))
 	{
-		warn("CreateDXGIFactory failed. Error: %x", hr);
+		debug("CreateDXGIFactory failed. Error: %x", hr);
 		return AMF_FAIL;
 	}
 
 	if (pFactory->EnumAdapters(adapterID, &pAdapter) == DXGI_ERROR_NOT_FOUND)
 	{
-		info("AdapterID = %d not found.", adapterID);
+		debug("AdapterID = %d not found.", adapterID);
 		return AMF_FAIL;
 	}
 
@@ -128,7 +128,7 @@ AMF_RESULT obs_vce_amf_d3d11_init(struct obs_amd *obs_vce, struct obs_vce_amf *o
 	char strDevice[100];
 	_snprintf_s(strDevice, 100, "%X", desc.DeviceId);
 
-	info("DX11: Choosen Device %d: Device ID: %s [%s]", adapterID, strDevice, desc.Description);
+	debug("DX11: Choosen Device %d: Device ID: %s [%s]", adapterID, strDevice, desc.Description);
 
 	ATL::CComPtr<IDXGIOutput> pOutput;
 	if (SUCCEEDED(pAdapter->EnumOutputs(0, &pOutput)))
@@ -155,11 +155,11 @@ AMF_RESULT obs_vce_amf_d3d11_init(struct obs_amd *obs_vce, struct obs_vce_amf *o
 		D3D11_SDK_VERSION, &pD3D11Device, &featureLevel, &pD3D11Context);
 	if (FAILED(hr))
 	{
-		warn("InitDX11() failed to create HW DX11.1 device ");
+		debug("InitDX11() failed to create HW DX11.1 device ");
 	}
 	else
 	{
-		info("InitDX11() created HW DX11 device");
+		debug("InitDX11() created HW DX11 device");
 	}
 
 	obs_vce->dx11_device = pD3D11Device;

@@ -36,10 +36,10 @@
 	blog(level, "[vce_amf encoder: '%s'] " format, \
 			obs_encoder_get_name(obs_vce->encoder), ##__VA_ARGS__)
 
-#define error(format, ...) do_log(LOG_ERROR,   format, ##__VA_ARGS__)
-#define warn(format, ...)  do_log(LOG_WARNING, format, ##__VA_ARGS__)
-#define info(format, ...)  do_log(LOG_INFO,    format, ##__VA_ARGS__)
-#define debug(format, ...) do_log(LOG_DEBUG,   format, ##__VA_ARGS__)
+#define error(format, ...) do_log(LOG_ERROR,   "ERROR: " format, ##__VA_ARGS__)
+#define warn(format, ...)  do_log(LOG_WARNING, "WARN: "  format, ##__VA_ARGS__)
+#define info(format, ...)  do_log(LOG_INFO,    "INFO: "  format, ##__VA_ARGS__)
+#define debug(format, ...) do_log(LOG_DEBUG,   "DEBUG: " format, ##__VA_ARGS__)
 
 /* ------------------------------------------------------------------------- */
 /* prototypes */

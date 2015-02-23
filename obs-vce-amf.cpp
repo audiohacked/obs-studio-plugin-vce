@@ -34,6 +34,9 @@ void *obs_vce_amf_create(obs_data_t *settings, obs_encoder_t *encoder)
 	AMF_RESULT amfReturn = AMF_OK;
 	struct obs_vce_amf *ova = reinterpret_cast<struct obs_vce_amf*>(bzalloc(sizeof(struct obs_vce_amf)));
 
+	const struct video_output_info *voi;
+	voi = video_output_get_info(obs_get_video());
+
 	//struct obs_video_info *ovi;
 	//bool got_video = obs_get_video_info(ovi);
 	//if (!got_video)
@@ -45,18 +48,18 @@ void *obs_vce_amf_create(obs_data_t *settings, obs_encoder_t *encoder)
 	 */
 	amfReturn = AMFCreateContext(&obs_vce->context);
 	if (amfReturn != AMF_OK) {
-		warn("Could not create AMF Context!");
+		debug("Could not create AMF Context!");
 	}
 
 	if (gs_get_device_type() == GS_DEVICE_DIRECT3D_11) {
-		info("DX11 device and AMF");
+		debug("DX11 device and AMF");
 		obs_vce->context->InitDX11(NULL);
 	}
 	else if (gs_get_device_type() == GS_DEVICE_OPENGL) {
-		info("OpenGL device and AMF");
+		debug("OpenGL device and AMF");
 	}
 	else {
-		info("Unknown device and AMF");
+		debug("Unknown device and AMF");
 		obs_vce_amf_d3d11_init(obs_vce, ova, 0);
 		obs_vce->context->InitDX11(obs_vce->dx11_device);
 	}
@@ -104,7 +107,10 @@ void *obs_vce_amf_create(obs_data_t *settings, obs_encoder_t *encoder)
 	// AMFInterface* - > AMFBuffer*; SPS/PPS buffer - read-only
 	// obs_vce->vce_encoder->SetProperty(amf::AMF_VIDEO_ENCODER_EXTRADATA, );
 	
-	obs_vce->vce_format = amf::AMF_SURFACE_NV12;
+	if (voi->format == VIDEO_FORMAT_NV12) {
+		obs_vce->vce_format = amf::AMF_SURFACE_NV12;
+	}
+
 	amfReturn = obs_vce->vce_encoder->Init(obs_vce->vce_format, amf_int32(ENC_WIDTH), amf_int32(ENC_HEIGHT));
 	if (amfReturn != AMF_OK)
 		warn("Unable to Init Encoder");
@@ -133,16 +139,16 @@ bool obs_vce_amf_encode(void *data, struct encoder_frame *frame,
 	 *         AMFSurface::GetPlane(), AMFPlane::GetNative()
 	 */
 	if (gs_get_device_type() == GS_DEVICE_DIRECT3D_11) {
-		info("Using DX11 Device for AMF Surface");
+		debug("Using DX11 Device for AMF Surface");
 		//obs_vce->context->CreateSurfaceFromDX11Native();
 	}
 	else if (gs_get_device_type() == GS_DEVICE_OPENGL) {
-		info("Using OpenGL Device for AMF Surface");
+		debug("Using OpenGL Device for AMF Surface");
 		//obs_vce->context->CreateSurfaceFromOpenGLNative();
 	}
 	else {
-		info("Allocating Host Surface");
-		info("AllocSurface");
+		debug("Allocating Host Surface");
+		debug("AllocSurface");
 		amfReturn = obs_vce->context->AllocSurface(amf::AMF_MEMORY_HOST,
 				obs_vce->vce_format, ENC_WIDTH, ENC_HEIGHT,
 				&obs_vce->vce_input);
@@ -150,15 +156,15 @@ bool obs_vce_amf_encode(void *data, struct encoder_frame *frame,
 	}
 	//init_pic_data(obs_vce, frame);
 
-	obs_vce->vce_input->SetProperty(AMF_VIDEO_ENCODER_END_OF_SEQUENCE, false);
-	obs_vce->vce_input->SetProperty(AMF_VIDEO_ENCODER_END_OF_STREAM, false);
-	obs_vce->vce_input->SetProperty(AMF_VIDEO_ENCODER_FORCE_PICTURE_TYPE, AMF_VIDEO_ENCODER_PICTURE_TYPE_IDR);
-	obs_vce->vce_input->SetProperty(AMF_VIDEO_ENCODER_INSERT_AUD, false);
-	obs_vce->vce_input->SetProperty(AMF_VIDEO_ENCODER_INSERT_SPS, false);
-	obs_vce->vce_input->SetProperty(AMF_VIDEO_ENCODER_INSERT_PPS, false);
-	obs_vce->vce_input->SetProperty(AMF_VIDEO_ENCODER_PICTURE_STRUCTURE, AMF_VIDEO_ENCODER_PICTURE_STRUCTURE_FRAME);
-	obs_vce->vce_input->SetProperty(AMF_VIDEO_ENCODER_MARK_CURRENT_WITH_LTR_INDEX, -1);
-	obs_vce->vce_input->SetProperty(AMF_VIDEO_ENCODER_FORCE_LTR_REFERENCE_BITFIELD, 0);
+	// obs_vce->vce_input->SetProperty(AMF_VIDEO_ENCODER_END_OF_SEQUENCE, false);
+	// obs_vce->vce_input->SetProperty(AMF_VIDEO_ENCODER_END_OF_STREAM, false);
+	// obs_vce->vce_input->SetProperty(AMF_VIDEO_ENCODER_FORCE_PICTURE_TYPE, AMF_VIDEO_ENCODER_PICTURE_TYPE_IDR);
+	// obs_vce->vce_input->SetProperty(AMF_VIDEO_ENCODER_INSERT_AUD, false);
+	// obs_vce->vce_input->SetProperty(AMF_VIDEO_ENCODER_INSERT_SPS, false);
+	// obs_vce->vce_input->SetProperty(AMF_VIDEO_ENCODER_INSERT_PPS, false);
+	// obs_vce->vce_input->SetProperty(AMF_VIDEO_ENCODER_PICTURE_STRUCTURE, AMF_VIDEO_ENCODER_PICTURE_STRUCTURE_FRAME);
+	// obs_vce->vce_input->SetProperty(AMF_VIDEO_ENCODER_MARK_CURRENT_WITH_LTR_INDEX, -1);
+	// obs_vce->vce_input->SetProperty(AMF_VIDEO_ENCODER_FORCE_LTR_REFERENCE_BITFIELD, 0);
 
 	/* Submit data object to encoder
 	 *     Set additional parameters on the data object
@@ -167,7 +173,7 @@ bool obs_vce_amf_encode(void *data, struct encoder_frame *frame,
 	 *     Submits data to component by
 	 *         AMFComponent::SubmitInput()
 	 */
-	info("SubmitInput to VCE");
+	debug("SubmitInput to VCE");
 	amfReturn = obs_vce->vce_encoder->SubmitInput(obs_vce->vce_input);
 	if (amfReturn == AMF_INPUT_FULL) {
 		warn("VCE Encoder Input Full");
@@ -182,17 +188,17 @@ bool obs_vce_amf_encode(void *data, struct encoder_frame *frame,
 	/* Queries for results (likely in a separate thread) by
 	 *     AMFComponent::QueryOutput
 	 */
-	info("QueryOutput from VCE");
+	debug("QueryOutput from VCE");
 	amfReturn = obs_vce->vce_encoder->QueryOutput(&outData);
 	if (amfReturn == AMF_OK) {
 		parse_packet(obs_vce, packet, obs_vce->vce_output);
 		//return true;
 	}
 
-	info("Telling VCE to Drain");
-	amfReturn = obs_vce->vce_encoder->Drain();
-	if (amfReturn == AMF_OK)
-		return true;
+	// debug("Telling VCE to Drain");
+	// amfReturn = obs_vce->vce_encoder->Drain();
+	// if (amfReturn == AMF_OK)
+	// 	return true;
 
 	return false;
 }
@@ -350,5 +356,5 @@ void obs_amf_result(struct obs_amd *obs_vce, AMF_RESULT amf_res)
 		string = "Unknown";
 		break;
 	}
-	warn("AMF_RESULT: %s", string);
+	debug("AMF_RESULT: %s", string);
 }

@@ -7,7 +7,8 @@ set(obs-vce_SOURCES
 	obs-vce.cpp
 	obs-vce-amf.cpp
 	obs-vce-amf-d3d11.cpp
-	obs-vce-amf-converters.cpp
+	obs-vce-amf-surface.cpp
+	obs-vce-amf-bitstream.cpp
 	obs-vce-optional.cpp
 	obs-vce-plugin-main.cpp)
 

@@ -20,15 +20,8 @@ void parse_packet(struct obs_amd *obs_vce,
 		struct encoder_packet *packet, amf::AMFBufferPtr pic_out)
 {
 	debug("parse_packet");
-	//UNUSED_PARAMETER(packet);
 
 	int frameType = -1;
-
-	//da_resize(obs_vce->packet_data, 0);
-	//for (int i = 0; i < nal_count; i++) {
-	//	da_push_back_array(obs_vce->packet_data, nal->p_payload,
-	//			nal->i_payload);
-	//}
 
 	packet->type = OBS_ENCODER_VIDEO;
 
@@ -47,4 +40,5 @@ void parse_packet(struct obs_amd *obs_vce,
 	debug("get keyframe");
 	pic_out->GetProperty(AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE, &frameType);
 	packet->keyframe = (frameType == 0);
+
 }

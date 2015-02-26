@@ -159,15 +159,16 @@ bool obs_vce_amf_encode(void *data, struct encoder_frame *frame,
 				&obs_vce->vce_input);
 		obs_amf_result(obs_vce, amfReturn);
 	}
-	init_pic_data(obs_vce, frame);
+	if (frame)
+		init_pic_data(obs_vce, frame);
 
-	// obs_vce->vce_input->SetProperty(AMF_VIDEO_ENCODER_END_OF_SEQUENCE, false);
-	// obs_vce->vce_input->SetProperty(AMF_VIDEO_ENCODER_END_OF_STREAM, false);
+	obs_vce->vce_input->SetProperty(AMF_VIDEO_ENCODER_END_OF_SEQUENCE, false);
+	obs_vce->vce_input->SetProperty(AMF_VIDEO_ENCODER_END_OF_STREAM, false);
 	// obs_vce->vce_input->SetProperty(AMF_VIDEO_ENCODER_FORCE_PICTURE_TYPE, AMF_VIDEO_ENCODER_PICTURE_TYPE_IDR);
-	// obs_vce->vce_input->SetProperty(AMF_VIDEO_ENCODER_INSERT_AUD, false);
-	// obs_vce->vce_input->SetProperty(AMF_VIDEO_ENCODER_INSERT_SPS, false);
-	// obs_vce->vce_input->SetProperty(AMF_VIDEO_ENCODER_INSERT_PPS, false);
-	// obs_vce->vce_input->SetProperty(AMF_VIDEO_ENCODER_PICTURE_STRUCTURE, AMF_VIDEO_ENCODER_PICTURE_STRUCTURE_FRAME);
+	obs_vce->vce_input->SetProperty(AMF_VIDEO_ENCODER_INSERT_AUD, false);
+	obs_vce->vce_input->SetProperty(AMF_VIDEO_ENCODER_INSERT_SPS, false);
+	obs_vce->vce_input->SetProperty(AMF_VIDEO_ENCODER_INSERT_PPS, false);
+	obs_vce->vce_input->SetProperty(AMF_VIDEO_ENCODER_PICTURE_STRUCTURE, AMF_VIDEO_ENCODER_PICTURE_STRUCTURE_FRAME);
 	// obs_vce->vce_input->SetProperty(AMF_VIDEO_ENCODER_MARK_CURRENT_WITH_LTR_INDEX, -1);
 	// obs_vce->vce_input->SetProperty(AMF_VIDEO_ENCODER_FORCE_LTR_REFERENCE_BITFIELD, 0);
 
@@ -199,6 +200,8 @@ bool obs_vce_amf_encode(void *data, struct encoder_frame *frame,
 		pBuffer = amf::AMFBufferPtr(outData);
 		pBuffer->Convert(amf::AMF_MEMORY_HOST);
 		parse_packet(obs_vce, packet, pBuffer);
+		debug("setting received_packet");
+		*received_packet = false;
 		return true;
 	}
 
@@ -363,6 +366,6 @@ void obs_amf_result(struct obs_amd *obs_vce, AMF_RESULT amf_res)
 		debug("AMF_RESULT: %s", string);
 	}
 	else {
-		debug("AMF_RESULT: %s", string);
+		warn("AMF_RESULT: %s", string);
 	}
 }

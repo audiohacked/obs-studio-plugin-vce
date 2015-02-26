@@ -20,14 +20,13 @@
 #include <util/dstr.h>
 #include <util/darray.h>
 #include <util/platform.h>
-#include <util/threading.h>
 #include <obs-module.h>
 
-#include <core/Buffer.h>
-#include <core/Surface.h>
-#include <core/Context.h>
-#include <components/Component.h>
-#include <components/VideoEncoderVCE.h>
+#include <amf/core/Buffer.h>
+#include <amf/core/Surface.h>
+#include <amf/core/Context.h>
+#include <amf/components/Component.h>
+#include <amf/components/VideoEncoderVCE.h>
 
 #include <string>
 #include <atlbase.h>
@@ -37,10 +36,10 @@
 	blog(level, "[vce_amf encoder: '%s'] " format, \
 			obs_encoder_get_name(obs_vce->encoder), ##__VA_ARGS__)
 
-#define error(format, ...) do_log(LOG_ERROR,   "ERROR: " format, ##__VA_ARGS__)
-#define warn(format, ...)  do_log(LOG_WARNING, "WARN: "  format, ##__VA_ARGS__)
-#define info(format, ...)  do_log(LOG_INFO,    "INFO: "  format, ##__VA_ARGS__)
-#define debug(format, ...) do_log(LOG_DEBUG,   "DEBUG: " format, ##__VA_ARGS__)
+#define error(format, ...) do_log(LOG_ERROR,   format, ##__VA_ARGS__)
+#define warn(format, ...)  do_log(LOG_WARNING, format, ##__VA_ARGS__)
+#define info(format, ...)  do_log(LOG_INFO,    format, ##__VA_ARGS__)
+#define debug(format, ...) do_log(LOG_DEBUG,   format, ##__VA_ARGS__)
 
 /* ------------------------------------------------------------------------- */
 /* prototypes */
@@ -74,26 +73,24 @@ struct obs_amd {
 	obs_encoder_t           *encoder;
 
 	// amf::AMFPropertyStorage vce_param;
-	amf::AMFContextPtr             context;
-	amf::AMFComponentPtr           vce_encoder;
-	amf::AMFSurfacePtr             vce_input;
-	amf::AMFBufferPtr              vce_output;
+	amf::AMFContextPtr         context;
+	amf::AMFComponentPtr       vce_encoder;
+	amf::AMFSurfacePtr         vce_input;
+	amf::AMFBufferPtr          vce_output;
 
-	amf::AMF_SURFACE_FORMAT        vce_format;
+	amf::AMF_SURFACE_FORMAT    vce_format;
 
-	DARRAY(uint8_t)                packet_data;
+	DARRAY(uint8_t)            packet_data;
 
-	uint8_t                        *extra_data;
-	uint8_t                        *sei;
+	uint8_t                    *extra_data;
+	uint8_t                    *sei;
 
-	size_t                         extra_data_size;
-	size_t                         sei_size;
+	size_t                     extra_data_size;
+	size_t                     sei_size;
 
-	os_performance_token_t         *performance_token;
+	os_performance_token_t     *performance_token;
 
-	ATL::CComPtr<ID3D11Device>     dx11_device;
-	const struct video_output_info *vid_out_info;
-	os_event_t                     *mStopEvent;
+	ATL::CComPtr<ID3D11Device> dx11_device;
 };
 
 struct obs_vce_amf {
